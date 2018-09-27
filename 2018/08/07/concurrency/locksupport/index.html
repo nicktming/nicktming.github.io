@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="introduction," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言 本篇文章主要分析本文会通过源码分析中看看```LockSupport```如何使用.12345&amp;gt; 本文代码: [代码下载](https://github.com/nicktming/code/tree/master/java/java_util_concurrent_sourcecode_analysis/locksupport_sourcecodeAndUsage)# ```Lock">
+<meta name="keywords" content="introduction">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hello World--nicktming 中文网站">
+<meta property="og:url" content="http://yoursite.com/2018/08/07/concurrency/locksupport/index.html">
+<meta property="og:site_name" content="tming的个人博客">
+<meta property="og:description" content="前言 本篇文章主要分析本文会通过源码分析中看看```LockSupport```如何使用.12345&amp;gt; 本文代码: [代码下载](https://github.com/nicktming/code/tree/master/java/java_util_concurrent_sourcecode_analysis/locksupport_sourcecodeAndUsage)# ```Lock">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2018-08-06T16:30:54.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hello World--nicktming 中文网站">
+<meta name="twitter:description" content="前言 本篇文章主要分析本文会通过源码分析中看看```LockSupport```如何使用.12345&amp;gt; 本文代码: [代码下载](https://github.com/nicktming/code/tree/master/java/java_util_concurrent_sourcecode_analysis/locksupport_sourcecodeAndUsage)# ```Lock">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/08/07/concurrency/locksupport/"/>
+
+
+
+
+
+  <title>Hello World--nicktming 中文网站 | tming的个人博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">tming的个人博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/07/concurrency/locksupport/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Nick tming">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="tming的个人博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Hello World--nicktming 中文网站</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-08-07T00:26:37+08:00">
+                2018-08-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hexo/" itemprop="url" rel="index">
+                    <span itemprop="name">hexo</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/08/07/concurrency/locksupport/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/08/07/concurrency/locksupport/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><blockquote>
+<p>本篇文章主要分析<figure class="highlight plain"><figcaption><span>本文会通过源码分析中看看```LockSupport```如何使用.</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&gt; 本文代码: [代码下载](https://github.com/nicktming/code/tree/master/java/java_util_concurrent_sourcecode_analysis/locksupport_sourcecodeAndUsage)</span><br><span class="line"></span><br><span class="line"># ```LockSupport```源码</span><br><span class="line">&gt; ```LockSupport```在```java.util.concurrent.locks```包中,总共的代码就一两百行左右,如下:</span><br></pre></td></tr></table></figure></p>
+</blockquote>
+<p>import java.lang.reflect.Field;<br>import sun.misc.Unsafe;</p>
+<p>public class LockSupport {</p>
+<pre><code>private LockSupport() {} 
+
+private static void setBlocker(Thread t, Object arg) {
+    UNSAFE.putObject(t, parkBlockerOffset, arg);
+}
+
+public static void unpark(Thread thread) {
+    if (thread != null)
+        UNSAFE.unpark(thread);
+}
+
+public static void park(Object blocker) {
+    Thread t = Thread.currentThread();
+    setBlocker(t, blocker);
+    UNSAFE.park(false, 0L);
+    setBlocker(t, null);
+}
+
+public static void parkNanos(Object blocker, long nanos) {
+    if (nanos &gt; 0) {
+        Thread t = Thread.currentThread();
+        setBlocker(t, blocker);
+        UNSAFE.park(false, nanos);
+        setBlocker(t, null);
+    }
+}
+
+public static void parkUntil(Object blocker, long deadline) {
+    Thread t = Thread.currentThread();
+    setBlocker(t, blocker);
+    UNSAFE.park(true, deadline);
+    setBlocker(t, null);
+}
+
+public static Object getBlocker(Thread t) {
+    if (t == null)
+        throw new NullPointerException();
+    return UNSAFE.getObjectVolatile(t, parkBlockerOffset);
+}
+
+public static void park() {
+    UNSAFE.park(false, 0L);
+}
+
+public static void parkNanos(long nanos) {
+    if (nanos &gt; 0)
+        UNSAFE.park(false, nanos);
+}
+
+public static void parkUntil(long deadline) {
+    UNSAFE.park(true, deadline);
+}
+
+static final int nextSecondarySeed() {
+    int r;
+    Thread t = Thread.currentThread();
+    if ((r = UNSAFE.getInt(t, SECONDARY)) != 0) {
+        r ^= r &lt;&lt; 13;   // xorshift
+        r ^= r &gt;&gt;&gt; 17;
+        r ^= r &lt;&lt; 5;
+    }
+    else if ((r = java.util.concurrent.ThreadLocalRandom.current().nextInt()) == 0)
+        r = 1; // avoid zero
+    UNSAFE.putInt(t, SECONDARY, r);
+    return r;
+}
+
+// Hotspot implementation via intrinsics API
+private static final sun.misc.Unsafe UNSAFE;
+private static final long parkBlockerOffset;
+private static final long SEED;
+private static final long PROBE;
+private static final long SECONDARY;
+static {
+    try {
+//UNSAFE = sun.misc.Unsafe.getUnsafe(); 源码
+            Field f = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);
+            f.setAccessible(true);
+            UNSAFE = (Unsafe)f.get(null);
+
+        Class&lt;?&gt; tk = Thread.class;
+        parkBlockerOffset = UNSAFE.objectFieldOffset
+            (tk.getDeclaredField(&quot;parkBlocker&quot;));
+        SEED = UNSAFE.objectFieldOffset
+            (tk.getDeclaredField(&quot;threadLocalRandomSeed&quot;));
+        PROBE = UNSAFE.objectFieldOffset
+            (tk.getDeclaredField(&quot;threadLocalRandomProbe&quot;));
+        SECONDARY = UNSAFE.objectFieldOffset
+            (tk.getDeclaredField(&quot;threadLocalRandomSecondarySeed&quot;));
+    } catch (Exception ex) { throw new Error(ex); }
+}
+</code></pre><p>}<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&gt; 代码中只有在获得```UNSAFE```的时候改成了反射实现,其余的都是维持原样.因为需要有特定的```classloader```才可以加载```Unsafe```类,因此在自己的代码中用反射来拿到实例对象.</span><br><span class="line">&gt; 另外```Unsafe```类的作用会有专门博客分析,暂时可以认为该类可以利用底层的方法成功操作.</span><br><span class="line">&gt; **注意:** ```tk```是```Thread.class```,操作的是```Thread```类的成员变量.</span><br><span class="line"></span><br><span class="line">&gt; 从上面源码中可以看到:</span><br><span class="line">&gt;&gt; **1.** 只有一个构造方法并且还是私有的,所以没办法```new```出一个对象.</span><br><span class="line">&gt;&gt; **2.** 方法几乎都是静态的,所以通过类就可以调用.</span><br><span class="line">&gt;&gt; **3.**  所有的```park*```方法最终都会调用```UNSAFE.park(boolean, long)```方法,```unpark```最终还是会调用```UNSAFE.unpark(Thread)```方法.</span><br><span class="line">&gt;&gt; **4.**  有一个```setBlocker```和```getBlocker```方法.</span><br><span class="line"></span><br><span class="line">&gt; 所以从该源码中也具体看不出逻辑和实现,所以看看```Unsafe```中```park```和```unpark```方法.</span><br><span class="line"></span><br><span class="line"># ```sun.misc.Unsafe```中的```park```和```unpark</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p>在<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">```</span><br><span class="line">public native void unpark(Object paramObject);</span><br><span class="line">public native void park(boolean paramBoolean, long paramLong);</span><br></pre></td></tr></table></figure></p>
+</blockquote>
+<blockquote>
+<p>这个是本地方法,实现如下:</p>
+</blockquote>
+<blockquote>
+<p>源码在<a href="http://hg.openjdk.java.net/jdk7/jdk7/hotspot/file/81d815b05abb/src/share/vm/runtime/park.hpp" target="_blank" rel="noopener">park.hpp</a>(这个是1.7的,没有找到1.8的,有<a href="http://hg.openjdk.java.net/jdk8u/jdk8u/" target="_blank" rel="noopener">地址</a>,但是还是没有找到具体的类的位置)<br>每个线程都有一个<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br><span class="line">&gt; ![图片.png](https://upload-images.jianshu.io/upload_images/11177530-43bd78e30033c79b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</span><br><span class="line"></span><br><span class="line">&gt; 对应的```park```和```unpark```源码, [源码文件](http://hg.openjdk.java.net/jdk7/jdk7/hotspot/file/81d815b05abb/src/os/linux/vm/os_linux.cpp)</span><br><span class="line"></span><br><span class="line">### park方法</span><br><span class="line"></span><br><span class="line">&gt; ![图片.png](https://upload-images.jianshu.io/upload_images/11177530-2284a6f739854a93.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</span><br><span class="line"></span><br><span class="line">&gt;```isAbsolute```表示是否是绝对时间,可以看到```parkUntil(long deadline) ```调用的时候表示的是绝对时间</span><br><span class="line"></span><br><span class="line">&gt; **1.** 如果```_counter```变量大于0,便可以获得许可```permit```.</span><br><span class="line">&gt; **2.** 可选性的优化,在阻塞前检查一下中断状态.如果当前线程处于中断状态,则直接返回.```_counter```没有变化,此时的```_counter```处于</span><br><span class="line">&gt; **3.** 检查一下时间是否到时,比如那种超时获取许可的方法等,另外如果```time``` &gt; 0,则调用```unpackTime(&amp;absTime, isAbsolute, time);```方法</span><br><span class="line"></span><br><span class="line">&gt; ![图片.png](https://upload-images.jianshu.io/upload_images/11177530-924a934b71e69d56.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</span><br><span class="line"></span><br><span class="line">&gt; **4.**  生成一个ThreadBlockInVM</span><br><span class="line">&gt; **5.**  这句话我还没有弄明白</span><br><span class="line">&gt; **6.**  再次检查```_counter```是不是大于0,如果是的话表示可以获得许可并且把```_counter```并且unlock ```_mutex```.</span><br><span class="line"></span><br><span class="line">&gt; ![图片.png](https://upload-images.jianshu.io/upload_images/11177530-47f4c6c5bc6eb2d0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</span><br><span class="line"></span><br><span class="line">&gt; **7.** 该线程进行等待状态, 如果```time```等于0,将会调用```pthread_cond_wait (_cond, _mutex)```,否则会进入```safe_cond_timedwait (_cond, _mutex, &amp;absTime)```应该是```TimedWait```状态(我没有测试,应该是)</span><br><span class="line">&gt; **8.** 等到等待返回后, 则把```_counter```设置为0并且```unlock mutex```.</span><br><span class="line"></span><br><span class="line">### unpark</span><br><span class="line">&gt; ![图片.png](https://upload-images.jianshu.io/upload_images/11177530-80321c61d837cac0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</span><br><span class="line"></span><br><span class="line">&gt; 直接设置```_counter```为1,如果```s```也就是```_counter```以前的值是0的话需要调用```pthread_cond_singal (_cond)```唤醒被阻塞的线程.</span><br><span class="line"></span><br><span class="line">&gt;稍微解释一下```_counter```的值等于0的时候的情况:</span><br><span class="line">&gt; **1.** 该线程还没有调用过```park```方法.</span><br><span class="line">&gt; **2.** 该线程在```unpark```前调用```park```方法,此时该线程会阻塞,并且```_counter```值为0. 如果在```unpark```后调用```park```方法,此时该线程不会阻塞但是```_counter```值也为0.</span><br><span class="line"></span><br><span class="line">&gt;在明白了基本原理之后,我们抛出别的锁之类的东西只关注```_counter```画个简单的逻辑图帮助理解.</span><br><span class="line">&gt;![logic.png](https://upload-images.jianshu.io/upload_images/11177530-f5ee3b60a9d55fd3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</span><br><span class="line"></span><br><span class="line">&gt;接下来看看具体的例子理解一下.</span><br><span class="line">#例子1</span><br><span class="line">&gt; ```park```的意思表示想要停车,停车当然需要获得许可,但是默认是不能获得许可(因为```_counter```默认为0).</span><br></pre></td></tr></table></figure></p>
+</blockquote>
+<p>public class TestLockSupport1 {<br>    public static void main(String[] args) {<br>        //test_1();<br>        //test_2();<br>        //test_3();<br>        //test_4();<br>    }</p>
+<pre><code>public static void test_1() {
+    //默认的时候当前线程的_counter = 0
+    LockSupport.unpark(Thread.currentThread()); //_counter = 1
+    LockSupport.park(); //_counter = 0
+    System.out.println(&quot;i can execute.&quot;); // 可以执行
+}
+
+public static void test_2() {
+    //默认的时候当前线程的_counter = 0
+    LockSupport.park(); //阻塞
+    System.out.println(&quot;i cannot execute.&quot;); //不能执行
+}
+
+public static void test_3() {
+    LockSupport.parkNanos(10);
+    System.out.println(&quot;i can execute after 10ns&quot;); //此时的_counter等于0
+    LockSupport.park();
+    System.out.println(&quot;i cannnot execute&quot;);
+}
+
+public static void test_4() {
+    long start = System.currentTimeMillis();
+    System.out.println(&quot;start:&quot; + start);
+    LockSupport.parkUntil(start + 10000);
+    System.out.println(&quot;end:&quot; + System.currentTimeMillis());
+    System.out.println(&quot;i can execute after 10s&quot;); //此时的_counter等于0
+    LockSupport.park();
+    System.out.println(&quot;i cannnot execute&quot;);
+}
+</code></pre><p>}<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt; **test_1:** 按照上面的分析,当前线程的```_counter```默认是0,所以当调用```unpark```会把该线程的```_counter```设置为1,因此再调用```park```的时候表示可以获得许可,也就是不会阻塞,所以```i can execute```会被执行.</span><br><span class="line">&gt; **test_2:** 因为默认的时候```_counter```是0,所以当调用```park```的时候会阻塞当前线程,因此```i cannot execute.```这句话不会执行.</span><br><span class="line">&gt; **test_3/test_4:** 调用```park```的另外一种形式,在等待一定时间后如果还没有获得许可就直接返回了.</span><br><span class="line"></span><br><span class="line">#例子2</span><br><span class="line">&gt; 在调用```park```方法可能阻塞的时候,除了超时等待这种情况,还可以让别的线程中断该阻塞的线程从阻塞状态中恢复.</span><br></pre></td></tr></table></figure></p>
+<p>public class TestLockSupport2 {<br>    public static void main(String[] args) throws InterruptedException {<br>        Thread thread = new Thread(new Runner1(), “mythread-1”);<br>        thread.start();<br>        Thread.sleep(1);  //保证thread可以充分运行<br>        thread.interrupt();<br>        Thread.sleep(1);  //保证after park() interrupted status 可以运行<br>        System.out.println(“main thread end!”);<br>    }</p>
+<pre><code>static class Runner1 implements Runnable {
+    @Override
+    public void run() {
+        System.out.println(&quot;before park() interrupted status:&quot; + Thread.currentThread().isInterrupted());
+        LockSupport.park();
+        System.out.println(&quot;after park() interrupted status:&quot; + Thread.currentThread().isInterrupted());
+    }
+}
+</code></pre><p>}<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt; 输出如下:</span><br></pre></td></tr></table></figure></p>
+<p>before park() interrupted status:false<br>after park() interrupted status:true<br>main thread end!<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;从结果中可以看到,中断该线程的时候只是改变该线程的中断状态并从阻塞状态中恢复, 并且没有抛出```InterruptedException```异常.</span><br><span class="line">关于中断可以参考我的另外一个博客 [[并发J.U.C] 用例子理解线程中断](https://www.jianshu.com/p/54b02b8384c6)</span><br><span class="line">关于异常可以参考我的另外一个博客 [理解异常的基本语法 (1)](https://www.jianshu.com/p/f2725cc8d889)</span><br><span class="line"></span><br><span class="line">#例子3</span><br><span class="line">&gt; 关于```blocker```的一个简单使用</span><br></pre></td></tr></table></figure></p>
+<p>public class TestLockSupport3 {</p>
+<pre><code>public static void main(String[] args) throws InterruptedException {
+    Thread thread = new Thread(new Runner1(), &quot;mythread-1&quot;);
+    thread.start();
+    Thread.sleep(2);  //保证thread可以充分运行
+    System.out.println(&quot;thread blocker:&quot; + LockSupport.getBlocker(thread));
+    thread.interrupt();
+    Thread.sleep(1);  //保证after park() interrupted status 可以运行
+    System.out.println(&quot;thread blocker:&quot; + LockSupport.getBlocker(thread));
+    System.out.println(&quot;main thread end!&quot;);
+}
+
+static class Runner1 implements Runnable {
+    String str = &quot;i am a blocker instance.&quot;;
+    @Override
+    public void run() {
+        System.out.println(&quot;before park() interrupted status:&quot; + Thread.currentThread().isInterrupted());
+        LockSupport.park(str);
+        System.out.println(&quot;after park() interrupted status:&quot; + Thread.currentThread().isInterrupted());
+    }
+}
+</code></pre><p>}<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt; 输出</span><br></pre></td></tr></table></figure></p>
+<p>before park() interrupted status:false<br>thread blocker:i am a blocker instance.<br>after park() interrupted status:true<br>thread blocker:null<br>main thread end!<br><code>`</code></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/introduction/" rel="tag"># introduction</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/08/04/leetcode/test/" rel="next" title="Leetcode 820. Short Encoding of Words">
+                <i class="fa fa-chevron-left"></i> Leetcode 820. Short Encoding of Words
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/touxiang.jpg"
+                alt="Nick tming" />
+            
+              <p class="site-author-name" itemprop="name">Nick tming</p>
+              <p class="site-description motion-element" itemprop="description">不会选择 不坚持选择 不断选择</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Nick tming</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,';
+    guest = guest.split(',').filter(item=>{
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: 'sqd5UwKad1XcqGzLaIm5RQnb-gzGzoHsz',
+        appKey: '2YdTww9HSKFhgW5ynaBViCb5',
+        placeholder: 'Just go go',
+        avatar:'mm',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
